@@ -1,21 +1,45 @@
 var express = require('express');
-var USER = require('../database/users');
+var user = require('../database/users');
+const USER = user.model;
+const USERSCHEMA = user.schema;
+var valid = require("../utils/valid")
+
 var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.status(200).json({
-    msn: "hola mundo"
+    msn: "Bienvenido a la API CATHOST"
    });
 });
 router.post('/user' , async(req, res)=>{
   var params = req.body;
   params["registerdate"] = new Date();
 
+ /* por si los datos se introducen mal */
+  if(!valid.checkParams(USERSCHEMA, params)){
+       res.status(300).json({
+         msn:"parametros incorrectos"
+       });
+       return;
+  }
+  /* controlador para la introduccion de email */
+  if(!valid.checkEmail(params.email)){
+    res.status(300).json({
+      msn:"email invalido"
+    });
+    return; 
+  }
+
+
+
+
   var users = new USER(params);
   var result =  await users.save();
   res.status(200).json(result); 
 });
+
+
 /* GET muestra datos */
 router.get("/user", (req, res) => {
  /* USER.find({}, (err, docs) => {

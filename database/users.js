@@ -8,4 +8,4 @@ var USERSCHEMA ={
     address      : String
 }
 const USERS = mongoose.model("users", USERSCHEMA);
-module.exports = USERS;
+module.exports = {model: USERS, schema: USERSCHEMA};

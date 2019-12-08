@@ -5,13 +5,59 @@ const USERSCHEMA = user.schema;
 var valid = require("../utils/valid")
 
 var router = express.Router();
+var jwt = require("jsonwebtoken");
 
+/*verificacion si el usuario tiene permiso */
+function verifytoken (req, res, next){
+  var token = req.headers["autorization"];
+  if(token == null){
+    res.status(300).json({"msn": "Error no tienes acceso"});
+    return;
+  }
+  jwt.verify(token, "password",(err, auth) => {
+    if(err){
+      res.status(300).json({"msn": "Token inalido"});
+      return;
+    }
+    res.status(200).json(auth);
+    return;
+    //next
+  })
+}
+
+ ///////login//////////////////////////////////
+router.post("/login", async(req, res, next) => {
+  var params = req.body;
+
+  if(valid.checkParams({"email":String,"password": String},params)){
+    res.status(300).json({
+      "msn": "Error paramentros incorrectos"});
+      return;
+  }
+
+  var haspassword = sha1(params.password);
+  var docs = await USER.find({email: params.email, password: haspassword},)
+
+   if(docs.length == 1 ){
+       jwt.sign({name: params.email, password: haspassword},"password", (err,token) => {
+         if(err){
+           res.status(300).json({"msn": "Error dentro del JWT"});
+           return;
+          }
+          res.status(200).json({"token": token});
+       });    
+       return;
+   }
+
+});
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.status(200).json({
     msn: "Bienvenido a la API CATHOST"
    });
 });
+
+
 router.post('/user' , async(req, res)=>{
   var params = req.body;
   params["registerdate"] = new Date();
@@ -23,6 +69,20 @@ router.post('/user' , async(req, res)=>{
        });
        return;
   }
+  if(!valid.checkPassword(params.password)){
+    res.status(300).json({
+      msn:"contrasena invalido"
+    });
+    return; 
+  }
+
+  if(!valid.checkName(params.name)){
+    res.status(300).json({
+      msn:"nombre invalido"
+    });
+    return; 
+  }
+
   /* controlador para la introduccion de email */
   if(!valid.checkEmail(params.email)){
     res.status(300).json({
@@ -41,7 +101,7 @@ router.post('/user' , async(req, res)=>{
 
 
 /* GET muestra datos */
-router.get("/user", (req, res) => {
+router.get("/user", verifytoken,async (req, res, next) => {
  /* USER.find({}, (err, docs) => {
     res.status(200).json(docs); 
   });*/

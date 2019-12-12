@@ -2,10 +2,10 @@ var express = require('express');
 var user = require('../database/users');
 const USER = user.model;
 const USERSCHEMA = user.schema;
-var valid = require("../utils/valid")
-
+var valid = require("../utils/valid");
 var router = express.Router();
 var jwt = require("jsonwebtoken");
+
 
 /*verificacion si el usuario tiene permiso */
 function verifytoken (req, res, next){
@@ -61,7 +61,7 @@ router.get('/', function(req, res, next) {
 router.post('/user' , async(req, res)=>{
   var params = req.body;
   params["registerdate"] = new Date();
-
+  params["roles"] = ["list"];
  /* por si los datos se introducen mal */
   if(!valid.checkParams(USERSCHEMA, params)){
        res.status(300).json({
@@ -90,10 +90,9 @@ router.post('/user' , async(req, res)=>{
     });
     return; 
   }
+    
 
-
-
-
+  params["password"] = sha1(this.params["password"]); 
   var users = new USER(params);
   var result =  await users.save();
   res.status(200).json(result); 
@@ -146,7 +145,7 @@ router.get("/user", verifytoken,async (req, res, next) => {
 router.patch("/user", (req, res) => {
    if (req.query.id == null){
     res.status(300).json({
-      mns: "Error no existe el id"
+      msn: "Error no existe el id"
     });
     return;
    }
@@ -158,6 +157,7 @@ router.patch("/user", (req, res) => {
 });
 
 router.delete("/user", async(req, res) => {
+  
     if(req.query.id == null){
       res.status(300).json({
          msn: "Error no existe id"
